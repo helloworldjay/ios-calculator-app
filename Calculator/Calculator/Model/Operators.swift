@@ -23,23 +23,27 @@ protocol BinaryOperation {
     func leftShiftOPeration(with element: Int) -> String
 }
 
-class DecimalOperator: DecimalOperation {
+class BaseOperator {
     func changeSign(element: String) throws -> String {
-        if let intElement = Int(element) {
-            return String(-intElement)
-        }
+        if let intElement = Int(element) { return String(-intElement) }
         guard let doubleElement = Double(element) else { throw CalculatorError.notNumericInput }
         return String(-doubleElement)
     }
     
-    func add(firstElement: Double, to secondElement: Double) -> String {
-        return String(firstElement + secondElement)
+    func add(firstElement: String, secondElement: String) throws -> String {
+        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(intFirstElement + intSecondElement) }
+        guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
+        return String(doubleFirstElement + doubleSecondElement)
     }
     
-    func subtract(secondElement: Double, from firstElement: Double) -> String {
-        return String(firstElement - secondElement)
+    func subtract(firstElement: String, secondElement: String) throws -> String {
+        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(intFirstElement - intSecondElement) }
+        guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
+        return String(doubleFirstElement - doubleSecondElement)
     }
-    
+}
+
+class DecimalOperator: BaseOperator, DecimalOperation {
     func multiply(firstElement: Double, by secondElement: Double) -> String {
         return String(firstElement * secondElement)
     }
@@ -50,19 +54,7 @@ class DecimalOperator: DecimalOperation {
     }
 }
 
-class BinaryOperator: BinaryOperation {
-    func changeSign(element: Int) -> Int {
-        return -element
-    }
-    
-    func add(_ firstElement: Int, to secondElement: Int) -> String {
-        return String(firstElement + secondElement)
-    }
-    
-    func subtract(_ secondElement: Int, from firstElement: Int) -> String {
-        return String(firstElement - secondElement)
-    }
-    
+class BinaryOperator: BaseOperator, BinaryOperation {
     func andOperation(_ firstElement: Int, and secondElement: Int) -> String {
         return String(firstElement & secondElement)
     }
@@ -105,17 +97,17 @@ enum operationPrecedenceTier: Int {
 
 struct OperationPrecedenceTable {
     let precedence: [String:Int] = [
-        "+" : operatorPrecedenceTier.thirdTier.rawValue,
-        "-" : operatorPrecedenceTier.thirdTier.rawValue,
-        "*" : operatorPrecedenceTier.topTier.rawValue,
-        "/" : operatorPrecedenceTier.topTier.rawValue,
-        "~" : operatorPrecedenceTier.topTier.rawValue,
-        "&" : operatorPrecedenceTier.topTier.rawValue,
-        "~&" : operatorPrecedenceTier.topTier.rawValue,
-        "|" : operatorPrecedenceTier.thirdTier.rawValue,
-        "~|" : operatorPrecedenceTier.thirdTier.rawValue,
-        "^" : operatorPrecedenceTier.thirdTier.rawValue,
-        "<<" : operatorPrecedenceTier.secondTier.rawValue,
-        ">>" : operatorPrecedenceTier.secondTier.rawValue,
+        "+" : operationPrecedenceTier.thirdTier.rawValue,
+        "-" : operationPrecedenceTier.thirdTier.rawValue,
+        "*" : operationPrecedenceTier.topTier.rawValue,
+        "/" : operationPrecedenceTier.topTier.rawValue,
+        "~" : operationPrecedenceTier.topTier.rawValue,
+        "&" : operationPrecedenceTier.topTier.rawValue,
+        "~&" : operationPrecedenceTier.topTier.rawValue,
+        "|" : operationPrecedenceTier.thirdTier.rawValue,
+        "~|" : operationPrecedenceTier.thirdTier.rawValue,
+        "^" : operationPrecedenceTier.thirdTier.rawValue,
+        "<<" : operationPrecedenceTier.secondTier.rawValue,
+        ">>" : operationPrecedenceTier.secondTier.rawValue,
     ]
 }
