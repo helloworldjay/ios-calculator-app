@@ -7,42 +7,99 @@
 
 import Foundation
 
-enum Operators: String, CaseIterable {
-    case add = "+"
-    case subtract = "-"
-    case multiply = "*"
-    case divide = "/"
-    case not = "~"
-    case and = "&"
-    case nand = "~&"
-    case or = "|"
-    case nor = "~|"
-    case xor = "^"
-    case leftShift = "<<"
-    case rightShift = ">>"
-    case equal = "="
+protocol DecimalOperation {
+    func multiply(firstElement: Double, by secondElement: Double) -> String
+    func divide(firstElement: Double, with secondElement: Double) throws -> String
+}
+
+protocol BinaryOperation {
+    func andOperation(_ firstElement: Int, and secondElement: Int) -> String
+    func nandOperation(_ firstElement: Int, nand secondElement: Int) -> String
+    func orOperation(_ firstElement: Int, or secondElement: Int) -> String
+    func norOperation(_ firstElement: Int, nor secondElement: Int) -> String
+    func xorOperation(_ firstElement: Int, xor secondElement: Int) -> String
+    func notOperation(with element: Int) -> String
+    func rightShiftOperation(with element: Int) -> String
+    func leftShiftOPeration(with element: Int) -> String
+}
+
+class DecimalOperator: DecimalOperation {
+    func changeSign(element: Double) -> Double {
+        return -element
+    }
     
-    var precedence: Int {
-        switch self {
-        case .not, .multiply, .divide, .and, .nand:
-            return 160
-        case .leftShift, .rightShift:
-            return 140
-        case .add, .subtract, .or, .nor, .xor:
-            return 120
-        case .equal:
-            return 40
-        }
+    func add(firstElement: Double, to secondElement: Double) -> String {
+        return String(firstElement + secondElement)
+    }
+    
+    func subtract(secondElement: Double, from firstElement: Double) -> String {
+        return String(firstElement - secondElement)
+    }
+    
+    func multiply(firstElement: Double, by secondElement: Double) -> String {
+        return String(firstElement * secondElement)
+    }
+    
+    func divide(firstElement: Double, with secondElement: Double) throws -> String {
+        if secondElement == 0 { throw CalculatorError.divideByZero }
+        return String(firstElement / secondElement)
     }
 }
 
-enum operatorPrecedenceTier: Int {
+class BinaryOperator: BinaryOperation {
+    func changeSign(element: Int) -> Int {
+        return -element
+    }
+    
+    func add(_ firstElement: Int, to secondElement: Int) -> String {
+        return String(firstElement + secondElement)
+    }
+    
+    func subtract(_ secondElement: Int, from firstElement: Int) -> String {
+        return String(firstElement - secondElement)
+    }
+    
+    func andOperation(_ firstElement: Int, and secondElement: Int) -> String {
+        return String(firstElement & secondElement)
+    }
+    
+    func nandOperation(_ firstElement: Int, nand secondElement: Int) -> String {
+        return String(~(firstElement & secondElement))
+    }
+    
+    func orOperation(_ firstElement: Int, or secondElement: Int) -> String {
+        return String(firstElement | secondElement)
+    }
+    
+    func norOperation(_ firstElement: Int, nor secondElement: Int) -> String {
+        return String(~(firstElement | secondElement))
+    }
+    
+    func xorOperation(_ firstElement: Int, xor secondElement: Int) -> String {
+        return String(firstElement ^ secondElement)
+    }
+    
+    func notOperation(with element: Int) -> String {
+        return String(~element)
+    }
+    
+    func rightShiftOperation(with element: Int) -> String {
+        return String(element >> 1)
+    }
+    
+    func leftShiftOPeration(with element: Int) -> String {
+        return String(element << 1)
+    }
+}
+
+enum operationPrecedenceTier: Int {
     case topTier = 160
     case secondTier = 140
     case thirdTier = 120
 }
 
-struct OperatorPrecedenceTable {
+
+struct OperationPrecedenceTable {
     let precedence: [String:Int] = [
         "+" : operatorPrecedenceTier.thirdTier.rawValue,
         "-" : operatorPrecedenceTier.thirdTier.rawValue,
