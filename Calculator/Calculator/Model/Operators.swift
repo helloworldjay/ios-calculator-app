@@ -24,8 +24,12 @@ protocol BinaryOperation {
 }
 
 class DecimalOperator: DecimalOperation {
-    func changeSign(element: Double) -> Double {
-        return -element
+    func changeSign(element: String) throws -> String {
+        if let intElement = Int(element) {
+            return String(-intElement)
+        }
+        guard let doubleElement = Double(element) else { throw CalculatorError.notNumericInput }
+        return String(-doubleElement)
     }
     
     func add(firstElement: Double, to secondElement: Double) -> String {
