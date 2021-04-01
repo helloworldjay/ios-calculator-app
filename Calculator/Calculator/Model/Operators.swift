@@ -24,6 +24,12 @@ protocol BinaryOperation {
 }
 
 class BaseOperator {
+    func calculate(firstElement: String, secondElement: String = "", method: (Int, Int) -> (Double)) throws -> String {
+        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(method(intFirstElement, intSecondElement)) }
+        guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
+        return String(doubleFirstElement + doubleSecondElement)
+    }
+    
     func changeSign(element: String) throws -> String {
         if let intElement = Int(element) { return String(-intElement) }
         guard let doubleElement = Double(element) else { throw CalculatorError.notNumericInput }
@@ -88,26 +94,35 @@ class BinaryOperator: BaseOperator, BinaryOperation {
     }
 }
 
-enum operationPrecedenceTier: Int {
+enum OperationPrecedenceTier: Int {
     case topTier = 160
     case secondTier = 140
     case thirdTier = 120
 }
 
+enum Operator {
+    case add
+    
+    var operation: (Double, Double) -> (Double) {
+        switch self {
+        case .add: return { $0 + $1 }
+        }
+    }
+}
 
 struct OperationPrecedenceTable {
     let precedence: [String:Int] = [
-        "+" : operationPrecedenceTier.thirdTier.rawValue,
-        "-" : operationPrecedenceTier.thirdTier.rawValue,
-        "*" : operationPrecedenceTier.topTier.rawValue,
-        "/" : operationPrecedenceTier.topTier.rawValue,
-        "~" : operationPrecedenceTier.topTier.rawValue,
-        "&" : operationPrecedenceTier.topTier.rawValue,
-        "~&" : operationPrecedenceTier.topTier.rawValue,
-        "|" : operationPrecedenceTier.thirdTier.rawValue,
-        "~|" : operationPrecedenceTier.thirdTier.rawValue,
-        "^" : operationPrecedenceTier.thirdTier.rawValue,
-        "<<" : operationPrecedenceTier.secondTier.rawValue,
-        ">>" : operationPrecedenceTier.secondTier.rawValue,
+        "+" : OperationPrecedenceTier.thirdTier.rawValue,
+        "-" : OperationPrecedenceTier.thirdTier.rawValue,
+        "*" : OperationPrecedenceTier.topTier.rawValue,
+        "/" : OperationPrecedenceTier.topTier.rawValue,
+        "~" : OperationPrecedenceTier.topTier.rawValue,
+        "&" : OperationPrecedenceTier.topTier.rawValue,
+        "~&" : OperationPrecedenceTier.topTier.rawValue,
+        "|" : OperationPrecedenceTier.thirdTier.rawValue,
+        "~|" : OperationPrecedenceTier.thirdTier.rawValue,
+        "^" : OperationPrecedenceTier.thirdTier.rawValue,
+        "<<" : OperationPrecedenceTier.secondTier.rawValue,
+        ">>" : OperationPrecedenceTier.secondTier.rawValue,
     ]
 }
