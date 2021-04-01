@@ -24,10 +24,9 @@ protocol BinaryOperation {
 }
 
 class BaseOperator {
-    func calculate(firstElement: String, secondElement: String = "", method: (Int, Int) -> (Double)) throws -> String {
-        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(method(intFirstElement, intSecondElement)) }
+    func calculate(firstElement: String, secondElement: String = "", method: (Double, Double) -> (Double)) throws -> String {
         guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
-        return String(doubleFirstElement + doubleSecondElement)
+        return String(method(doubleFirstElement, doubleSecondElement))
     }
     
     func changeSign(element: String) throws -> String {
