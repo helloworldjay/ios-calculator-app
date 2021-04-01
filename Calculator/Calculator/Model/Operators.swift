@@ -24,7 +24,7 @@ protocol BinaryOperation {
 }
 
 class BaseOperator {
-    func calculate(firstElement: String, secondElement: String = "", method: (Double, Double) -> (Double)) throws -> String {
+    func calculate(firstElement: String, secondElement: String = "", method: (Double, Double) -> Double) throws -> String {
         guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
         return String(method(doubleFirstElement, doubleSecondElement))
     }
@@ -102,7 +102,7 @@ enum OperationPrecedenceTier: Int {
 enum Operator {
     case add
     
-    var operation: (Double, Double) -> (Double) {
+    var operation: (Double, Double) -> Double {
         switch self {
         case .add: return { $0 + $1 }
         }
