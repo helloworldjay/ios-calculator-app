@@ -47,7 +47,9 @@
 
 3. ~~Operator 열거형이 String을 rawValue로 갖는 이유가 나중에 stack에서 입력받아 사용할때 필요~~
 
-4. 10진 연산을 Int로 형변환이 가능한 것은 일단 형변환 해서 연산하고 Double인 것은 Double로 연산할 수도 있고, 모든 타입을 Double로 연산한 후 결과가 Int면 Int로 변환할 수 있다. 후자가 더 편하지만 부동소수점 특성상 이렇게 되면 Int + Int가 Double이 되거나 연산의 결과가 달라지는 경우가 있을 수 있을 것 같다. 부동소수점 문제를 처리할 필요가 있어보인다.
+4. 10진 연산을 Int로 형변환이 가능한 것은 일단 형변환 해서 연산하고 Double인 것은 Double로 연산할 수도 있고, 모든 타입을 Double로 연산한 후 결과가 Int면 Int로 변환할 수 있습니다. 후자가 더 편하지만 부동소수점 특성상 이렇게 되면 Int + Int가 Double이 되거나 연산의 결과가 달라지는 경우가 있을 수 있을 것 같습니다. 부동소수점 문제를 처리할 필요가 있어보입니다.
+
+5. 연산시에 "+"처럼 String으로 값이 들어왔을 때, 연산자의 enum type을 반환해야합니다. enum의 rawValue에 해당 연산자 String을 할당하면 case add = "+" 같은 구조가 되고, 입력받은 String을 전체 순회하며 같은 연산자 타입이 존재할 때 그 타입을 반환해도 됩니다. 하지만 이 방식은 rawValue의 원래 의미에 적합하지 않고, O(N)이라는 단점이 있습니다. 더 나은 로직을 생각할 필요가 있을 것 같습니다.
 
    <br/>
 
@@ -94,6 +96,17 @@
 
 3. 연산 자체를 클로저로 구현하여 메소드의 파라미터로 입력
 
+   ```swift
+   var doubleOperation: (Double, Double) -> Double {
+           switch self {
+           case .add: return { $0 + $1 }
+           case .subtract: return { $0 - $1 }
+           case .multiply: return { $0 * $1 }
+           case .divide: return { $0 / $1 }
+           }
+       }
+   ```
+
    
 
 <br/>
@@ -131,9 +144,9 @@
 
   ```swift
   enum OperationPrecedenceTier: Comparable {
-      case topTier
-      case secondTier
       case thirdTier
+      case secondTier
+      case topTier
   }
   
   struct OperationPrecedenceTable {
@@ -154,3 +167,4 @@
   ```
 
   비슷한 코드이지만 rawValue라는 부분이 없어지고, 의미없는 숫자 160 등이 사라지면서 훨씬 직관적이고 의미있는 코드가 되었습니다. 가장 재미있는 학습이었습니다.
+

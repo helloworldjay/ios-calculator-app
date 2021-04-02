@@ -67,9 +67,9 @@ enum IntBinaryOperator {
 }
 
 enum OperationPrecedenceTier: Comparable {
-    case topTier
-    case secondTier
     case thirdTier
+    case secondTier
+    case topTier
 }
 
 struct OperationPrecedenceTable {
