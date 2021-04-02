@@ -7,121 +7,84 @@
 
 import Foundation
 
-protocol DecimalOperation {
-    func multiply(firstElement: Double, by secondElement: Double) -> String
-    func divide(firstElement: Double, with secondElement: Double) throws -> String
-}
 
-protocol BinaryOperation {
-    func andOperation(_ firstElement: Int, and secondElement: Int) -> String
-    func nandOperation(_ firstElement: Int, nand secondElement: Int) -> String
-    func orOperation(_ firstElement: Int, or secondElement: Int) -> String
-    func norOperation(_ firstElement: Int, nor secondElement: Int) -> String
-    func xorOperation(_ firstElement: Int, xor secondElement: Int) -> String
-    func notOperation(with element: Int) -> String
-    func rightShiftOperation(with element: Int) -> String
-    func leftShiftOPeration(with element: Int) -> String
-}
-
-class BaseOperator {
-    func calculate(firstElement: String, secondElement: String = "", method: (Double, Double) -> Double) throws -> String {
+struct Calculator {
+    func doubleCalculate(firstElement: String, secondElement: String, method: (Double, Double) -> Double) throws -> String {
         guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
         return String(method(doubleFirstElement, doubleSecondElement))
     }
     
-    func changeSign(element: String) throws -> String {
-        if let intElement = Int(element) { return String(-intElement) }
-        guard let doubleElement = Double(element) else { throw CalculatorError.notNumericInput }
-        return String(-doubleElement)
+    func intUnaryCalculate(element: String, method: (Int) -> Int) throws -> String {
+        guard let intElement = Int(element) else { throw CalculatorError.notNumericInput }
+        return String(method(intElement))
     }
     
-    func add(firstElement: String, secondElement: String) throws -> String {
-        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(intFirstElement + intSecondElement) }
-        guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
-        return String(doubleFirstElement + doubleSecondElement)
-    }
-    
-    func subtract(firstElement: String, secondElement: String) throws -> String {
-        if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(intFirstElement - intSecondElement) }
-        guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
-        return String(doubleFirstElement - doubleSecondElement)
+    func intBinaryCalculate(firstElement: String, secondElement: String, method: (Int, Int) -> Int) throws -> String {
+        guard let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) else { throw CalculatorError.notNumericInput }
+        return String(method(intFirstElement, intSecondElement))
     }
 }
 
-class DecimalOperator: BaseOperator, DecimalOperation {
-    func multiply(firstElement: Double, by secondElement: Double) -> String {
-        return String(firstElement * secondElement)
-    }
+enum DoubleOperator {
+    case add, subtract, multiply, divide
     
-    func divide(firstElement: Double, with secondElement: Double) throws -> String {
-        if secondElement == 0 { throw CalculatorError.divideByZero }
-        return String(firstElement / secondElement)
-    }
-}
-
-class BinaryOperator: BaseOperator, BinaryOperation {
-    func andOperation(_ firstElement: Int, and secondElement: Int) -> String {
-        return String(firstElement & secondElement)
-    }
-    
-    func nandOperation(_ firstElement: Int, nand secondElement: Int) -> String {
-        return String(~(firstElement & secondElement))
-    }
-    
-    func orOperation(_ firstElement: Int, or secondElement: Int) -> String {
-        return String(firstElement | secondElement)
-    }
-    
-    func norOperation(_ firstElement: Int, nor secondElement: Int) -> String {
-        return String(~(firstElement | secondElement))
-    }
-    
-    func xorOperation(_ firstElement: Int, xor secondElement: Int) -> String {
-        return String(firstElement ^ secondElement)
-    }
-    
-    func notOperation(with element: Int) -> String {
-        return String(~element)
-    }
-    
-    func rightShiftOperation(with element: Int) -> String {
-        return String(element >> 1)
-    }
-    
-    func leftShiftOPeration(with element: Int) -> String {
-        return String(element << 1)
-    }
-}
-
-enum OperationPrecedenceTier: Int {
-    case topTier = 160
-    case secondTier = 140
-    case thirdTier = 120
-}
-
-enum Operator {
-    case add
-    
-    var operation: (Double, Double) -> Double {
+    var doubleOperation: (Double, Double) -> Double {
         switch self {
         case .add: return { $0 + $1 }
+        case .subtract: return { $0 - $1 }
+        case .multiply: return { $0 * $1 }
+        case .divide: return { $0 / $1 }
         }
     }
 }
 
+enum IntUnaryOperator {
+    case notOperation, rightShiftOperation, leftShiftOPeration
+    
+    var intUnaryOperation: (Int) -> Int {
+        switch self {
+        case .notOperation: return { ~$0 }
+        case .rightShiftOperation: return { $0 >> 1 }
+        case .leftShiftOPeration: return { $0 << 1 }
+        }
+    }
+}
+
+enum IntBinaryOperator {
+    case add, subtract, andOperation, nandOperation, orOperation, norOperation, xorOperation
+    
+    var intBinaryOperation: (Int, Int) -> Int {
+        switch self {
+        case .add: return { $0 + $1 }
+        case .subtract: return { $0 - $1 }
+        case .andOperation: return { $0 & $1 }
+        case .nandOperation: return { ~($0 & $1) }
+        case .orOperation: return { $0 | $1 }
+        case .norOperation: return { ~($0 | $1) }
+        case .xorOperation: return { $0 ^ $1 }
+        }
+    }
+}
+
+enum OperationPrecedenceTier: Comparable {
+    case topTier
+    case secondTier
+    case thirdTier
+}
+
 struct OperationPrecedenceTable {
-    let precedence: [String:Int] = [
-        "+" : OperationPrecedenceTier.thirdTier.rawValue,
-        "-" : OperationPrecedenceTier.thirdTier.rawValue,
-        "*" : OperationPrecedenceTier.topTier.rawValue,
-        "/" : OperationPrecedenceTier.topTier.rawValue,
-        "~" : OperationPrecedenceTier.topTier.rawValue,
-        "&" : OperationPrecedenceTier.topTier.rawValue,
-        "~&" : OperationPrecedenceTier.topTier.rawValue,
-        "|" : OperationPrecedenceTier.thirdTier.rawValue,
-        "~|" : OperationPrecedenceTier.thirdTier.rawValue,
-        "^" : OperationPrecedenceTier.thirdTier.rawValue,
-        "<<" : OperationPrecedenceTier.secondTier.rawValue,
-        ">>" : OperationPrecedenceTier.secondTier.rawValue,
+    let precedence: [String : OperationPrecedenceTier] = [
+        "+" : OperationPrecedenceTier.thirdTier,
+        "-" : OperationPrecedenceTier.thirdTier,
+        "*" : OperationPrecedenceTier.topTier,
+        "/" : OperationPrecedenceTier.topTier,
+        "~" : OperationPrecedenceTier.topTier,
+        "&" : OperationPrecedenceTier.topTier,
+        "~&" : OperationPrecedenceTier.topTier,
+        "|" : OperationPrecedenceTier.thirdTier,
+        "~|" : OperationPrecedenceTier.thirdTier,
+        "^" : OperationPrecedenceTier.thirdTier,
+        "<<" : OperationPrecedenceTier.secondTier,
+        ">>" : OperationPrecedenceTier.secondTier,
     ]
 }

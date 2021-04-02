@@ -37,7 +37,7 @@
 
    아이폰 계산기 어플을 기준으로 했을 때, 10진 계산기는 2번의 방식을 따릅니다. 예시로 삼을 2진 계산기가 없어 2진 계산기 역시 2번의 방식으로 구현하기로 했습니다.
 
-2. 연산자 우선순위
+2. ~~연산자 우선순위~~
 
    1-2의 방식을 따르려면 연산자 우선순위가 필요합니다. 연산자 우선순위는 아래와 같이 구현했습니다.
 
@@ -45,4 +45,112 @@
 
    문제는 여기서 .notAnd, notOr 연산이었습니다. notAnd 연산과 notOr 연산의 우선 순위를 알 수가 없어서 우선 캠퍼들과 대화를 통해 not의 우선순위와 동치시켰습니다. 이는 이후 더 많은 대화와 자료를 통해 수정할 예정입니다. 아직 답을 모르는 상태입니다(and에 가까운지 not에 가까운지).
 
-3. Operator 열거형이 String을 rawValue로 갖는 이유가 나중에 stack에서 입력받아 사용할때 필요
+3. ~~Operator 열거형이 String을 rawValue로 갖는 이유가 나중에 stack에서 입력받아 사용할때 필요~~
+
+4. 10진 연산을 Int로 형변환이 가능한 것은 일단 형변환 해서 연산하고 Double인 것은 Double로 연산할 수도 있고, 모든 타입을 Double로 연산한 후 결과가 Int면 Int로 변환할 수 있다. 후자가 더 편하지만 부동소수점 특성상 이렇게 되면 Int + Int가 Double이 되거나 연산의 결과가 달라지는 경우가 있을 수 있을 것 같다. 부동소수점 문제를 처리할 필요가 있어보인다.
+
+   <br/>
+
+## 🏢 연산자 구현 구조
+
+위의 열거형 방식을 정하기 전 연산자를 구현하는 방식을 정할 필요가 있었습니다. 생각해본 구조는 다음과 같습니다.
+
+1. 입력을 String으로 받은 후, 변환해서 함수의 파라미터로 넣어주기
+
+   ```swift
+   func andOperation(_ firstElement: Int, and secondElement: Int) -> String {
+           return String(firstElement & secondElement)
+       }
+       
+       func nandOperation(_ firstElement: Int, nand secondElement: Int) -> String {
+           return String(~(firstElement & secondElement))
+       }
+       ...
+   ```
+
+   위의 구조 장점은 코드 리딩이 심플합니다. 하지만 10진 계산기의 경우 Int, Double형이 가능하고 2진 계산기는 Int로 표현하므로 상황에 따라 변환의 가능성이 다양하고 Stack<String>의 요소를 꺼내올 때마다 해당 변환을 반복해야하므로 불필요한 비용이 발생할 수 있습니다. 이 구조에서는 
+
+   ```swift
+   protocol BinaryOperation
+   protocol DecimalOperation
+   class BaseOperator
+   class BinaryOperator: BaseOperator, BinaryOperation
+   class DecimalOperator: BaseOperator, DecimalOperation
+   ```
+
+   을 통해서 구현했습니다.
+
+2. 입력은 무조건 String으로 받아 내부에서 숫자로 변환하여 처리하기
+
+   ```swift
+   func add(firstElement: String, secondElement: String) throws -> String {
+           if let intFirstElement = Int(firstElement), let intSecondElement = Int(secondElement) { return String(intFirstElement + intSecondElement) }
+           guard let doubleFirstElement = Double(firstElement), let doubleSecondElement = Double(secondElement) else { throw CalculatorError.notNumericInput }
+           return String(doubleFirstElement + doubleSecondElement)
+       }
+   ```
+
+   덧셈 연산은 크게 10진 계산기의 덧셈, 2진 계산기의 덧셈이 있고, 10진에서도 Int형과 Double형의 계산이 있을 수 있습니다. 이 때, 10진 계산에서 Int형 계산을 Double로 처리한 후 결과가 Int가 가능하면 Int로 처리할 수도 있고, 애초에 Int형이라면 Int로 변형한 후 연산하는 방식도 있습니다. 위의 식에서는 후자의 방식으로 둘다 Int라면 결과를 Int로 반환해 String으로 전환하고, 아니라면 Double로 변환해 연산합니다.
+
+3. 연산 자체를 클로저로 구현하여 메소드의 파라미터로 입력
+
+   
+
+<br/>
+
+## 👍 연산자 우선순위 구현하기
+
+- 가장 고민이 많았던 부분 중 하나입니다. 처음에는 enum을 활용해서 연산자에 우선순위에 따라 rawValue를 임의로 주고, rawValue를 반환받아 비교하는 로직을 생각했습니다. 하지만 만족스럽지 않아 더 고민하였고, 우선순위 자체를 enum으로 만들어 구현하였습니다.
+
+  ```swift
+  enum OperationPrecedenceTier: Int {
+      case topTier = 160
+      case secondTier = 140
+      case thirdTier = 120
+  }
+  
+  struct OperationPrecedenceTable {
+      let precedence: [String:Int] = [
+          "+" : OperationPrecedenceTier.thirdTier.rawValue,
+          "-" : OperationPrecedenceTier.thirdTier.rawValue,
+          "*" : OperationPrecedenceTier.topTier.rawValue,
+          "/" : OperationPrecedenceTier.topTier.rawValue,
+          "~" : OperationPrecedenceTier.topTier.rawValue,
+          "&" : OperationPrecedenceTier.topTier.rawValue,
+          "~&" : OperationPrecedenceTier.topTier.rawValue,
+          "|" : OperationPrecedenceTier.thirdTier.rawValue,
+          "~|" : OperationPrecedenceTier.thirdTier.rawValue,
+          "^" : OperationPrecedenceTier.thirdTier.rawValue,
+          "<<" : OperationPrecedenceTier.secondTier.rawValue,
+          ">>" : OperationPrecedenceTier.secondTier.rawValue,
+      ]
+  }
+  ```
+
+  연산자를 입력받을 때 String으로 받을 것이기 때문에 바로 연산자 우선순위를 알 수 있도록 Dictionary로 구성하였습니다. 하지만 여기에서 피드백으로 Comparable에 대한 학습을 권유해주셨습니다. comparable을 학습해서 적용해본 경험은 이번 프로젝트에서 가장 재미있게 한 부분인 것 같습니다. 적용한 코드는 아래와 같습니다.
+
+  ```swift
+  enum OperationPrecedenceTier: Comparable {
+      case topTier
+      case secondTier
+      case thirdTier
+  }
+  
+  struct OperationPrecedenceTable {
+      let precedence: [String:OperationPrecedenceTier] = [
+          "+" : OperationPrecedenceTier.thirdTier,
+          "-" : OperationPrecedenceTier.thirdTier,
+          "*" : OperationPrecedenceTier.topTier,
+          "/" : OperationPrecedenceTier.topTier,
+          "~" : OperationPrecedenceTier.topTier,
+          "&" : OperationPrecedenceTier.topTier,
+          "~&" : OperationPrecedenceTier.topTier,
+          "|" : OperationPrecedenceTier.thirdTier,
+          "~|" : OperationPrecedenceTier.thirdTier,
+          "^" : OperationPrecedenceTier.thirdTier,
+          "<<" : OperationPrecedenceTier.secondTier,
+          ">>" : OperationPrecedenceTier.secondTier,
+      ]
+  ```
+
+  비슷한 코드이지만 rawValue라는 부분이 없어지고, 의미없는 숫자 160 등이 사라지면서 훨씬 직관적이고 의미있는 코드가 되었습니다. 가장 재미있는 학습이었습니다.
